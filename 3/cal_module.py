@@ -31,6 +31,14 @@ def readDiv(line, index):
     token = {'type': 'DIV'}
     return token, index + 1
 
+def readL(line, index):
+    token = {'type': 'LPARLEN'}
+    return token, index + 1
+
+def readR(line, index):
+    token = {'type': 'RPARLEN'}
+    return token, index + 1
+
 
 def tokenize(line):
     tokens = []
@@ -46,18 +54,51 @@ def tokenize(line):
             (token, index) = readMul(line, index)
         elif line[index] == '/':
             (token, index) = readDiv(line, index)
+        elif line[index] == '(':
+            (token, index) = readL(line, index)
+        elif line[index] == ')':
+            (token, index) = readR(line, index)
         else:
             print 'Invalid character found: ' + line[index]
             exit(1)
         tokens.append(token)
     return tokens
 
+def is_parlen_exist(tokens):
+    index = 0
+    while index < len(tokens):
+        if tokens[index]['type'] == 'LPARLEN':
+            return 1
+        index += 1
+    return 0
 
-def evaluate(tokens):
-    answer = 0
-    tokens.insert(0, {'type': 'PLUS'}) # Insert a dummy '+' token
-    index = 2
+def evaluate_parlen(tokens):
+    index = 0
+    l_num = r_num = 0
+    left_end = 0
+    while index < len(tokens):
+        if tokens[index]['type'] == 'LPARLEN':
+            # memorize left end
+            if l_num == 0:
+                left_end = index
+            l_num += 1
+        elif tokens[index]['type'] == 'RPARLEN':
+            r_num += 1
+        # Find Pair !
+        if l_num == r_num and l_num != 0:
+            # Take out inner ()
+            answer = tokens[left_end + 1:index]
+            # (~~) -> result of cal(~~) (substitute)
+            num = evaluate(answer)
+            del tokens[left_end:index + 1]
+            tokens.insert(left_end, {'type': 'NUMBER', 'number': num})
+            evaluate_parlen(tokens)
+        index += 1
+    return tokens
+
+def evaluate_mul_div(tokens):
     # first step: *, /
+    index = 0
     while index < len(tokens):
         if tokens[index]['type'] == 'MUL':
             # a mul b -> c (substitute)
@@ -66,13 +107,18 @@ def evaluate(tokens):
             tokens.insert(index - 1, {'type': 'NUMBER', 'number': num})
         elif tokens[index]['type'] == 'DIV':
             # a mul b -> c (substitute)
-            # tips: '*1.0' -> decimal ok 
+            # tips: '*1.0' -> Allow decimal 
             num = tokens[index - 1]['number'] * 1.0 / tokens[index + 1]['number']
             del tokens[index - 1 : index + 2]
             tokens.insert(index - 1, {'type': 'NUMBER', 'number': num})
         else:
             index += 1
-    # second step: +, 1
+    return tokens
+
+def evaluate_pl_mi(tokens):
+    # second step: +, -
+    answer = 0
+    tokens.insert(0, {'type': 'PLUS'}) # Insert a dummy '+' token
     index = 1
     while index < len(tokens):
         if tokens[index]['type'] == 'NUMBER':
@@ -85,10 +131,19 @@ def evaluate(tokens):
         index += 1
     return answer
 
+def evaluate(tokens):
+    if is_parlen_exist(tokens):
+        tokens = evaluate_parlen(tokens)
+    tokens = evaluate_mul_div(tokens)
+    answer = evaluate_pl_mi(tokens)
+    return answer
+
+
 
 def test(line, expectedAnswer):
     tokens = tokenize(line)
     actualAnswer = evaluate(tokens)
+    # actualAnswer = evaluate_pl_mi(evaluate_mul_div(evaluate_parlen(tokens)))
     if abs(actualAnswer - expectedAnswer) < 1e-8:
         print "PASS! (%s = %f)" % (line, expectedAnswer)
     else:
@@ -101,7 +156,10 @@ def runTest():
     test("1+2", 3)
     test("1.0+2.1-3", 0.1)
     test("5/2*3.0", 7.5)
-
+    test("((1+2)+3)+4", 10)
+    test("(1+1)+(1+1)", 4)
+    test("(1+2)*3", 9)
+    test("(3.0+4*(2-1))/5", 1.4)
     print "==== Test finished! ====\n"
 
 runTest()
