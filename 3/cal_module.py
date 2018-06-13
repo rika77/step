@@ -64,27 +64,19 @@ def tokenize(line):
         tokens.append(token)
     return tokens
 
-def is_parlen_exist(tokens):
-    index = 0
-    while index < len(tokens):
-        if tokens[index]['type'] == 'LPARLEN':
-            return 1
-        index += 1
-    return 0
-
 def evaluate_parlen(tokens):
     index = 0
     l_num = r_num = 0
     left_end = 0
     while index < len(tokens):
         if tokens[index]['type'] == 'LPARLEN':
-            # memorize left end
+            # memorize "left end"
             if l_num == 0:
                 left_end = index
             l_num += 1
         elif tokens[index]['type'] == 'RPARLEN':
             r_num += 1
-        # Find Pair !
+        # Find a Pair !
         if l_num == r_num and l_num != 0:
             # Take out inner ()
             answer = tokens[left_end + 1:index]
@@ -97,7 +89,7 @@ def evaluate_parlen(tokens):
     return tokens
 
 def evaluate_mul_div(tokens):
-    # first step: *, /
+    # *, /
     index = 0
     while index < len(tokens):
         if tokens[index]['type'] == 'MUL':
@@ -116,7 +108,7 @@ def evaluate_mul_div(tokens):
     return tokens
 
 def evaluate_pl_mi(tokens):
-    # second step: +, -
+    # +, -
     answer = 0
     tokens.insert(0, {'type': 'PLUS'}) # Insert a dummy '+' token
     index = 1
@@ -132,8 +124,7 @@ def evaluate_pl_mi(tokens):
     return answer
 
 def evaluate(tokens):
-    if is_parlen_exist(tokens):
-        tokens = evaluate_parlen(tokens)
+    tokens = evaluate_parlen(tokens)
     tokens = evaluate_mul_div(tokens)
     answer = evaluate_pl_mi(tokens)
     return answer
