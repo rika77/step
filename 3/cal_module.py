@@ -80,11 +80,12 @@ def evaluate_parlen(tokens):
         if l_num == r_num and l_num != 0:
             # Take out inner ()
             answer = tokens[left_end + 1:index]
-            # (~~) -> result of cal(~~) (substitute)
+            # (~~) print l_num, r_num, index
             num = evaluate(answer)
             del tokens[left_end:index + 1]
             tokens.insert(left_end, {'type': 'NUMBER', 'number': num})
-            evaluate_parlen(tokens)
+            l_num = r_num = 0
+            index = left_end
         index += 1
     return tokens
 
@@ -148,6 +149,7 @@ def runTest():
     test("1.0+2.1-3", 0.1)
     test("5/2*3.0", 7.5)
     test("((1+2)+3)+4", 10)
+    test("1+(2+(3+4))", 10)
     test("(1+1)+(1+1)", 4)
     test("(1+2)*3", 9)
     test("(3.0+4*(2-1))/5", 1.4)
