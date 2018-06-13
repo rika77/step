@@ -80,7 +80,7 @@ def evaluate_parlen(tokens):
         if l_num == r_num and l_num != 0:
             # Take out inner ()
             answer = tokens[left_end + 1:index]
-            # (~~) print l_num, r_num, index
+            # (~~) -> result of cal(~~) (substitute) 
             num = evaluate(answer)
             del tokens[left_end:index + 1]
             tokens.insert(left_end, {'type': 'NUMBER', 'number': num})
